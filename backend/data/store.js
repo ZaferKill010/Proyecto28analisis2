@@ -1,29 +1,12 @@
-// ============================================================
-//  store.js — Base de datos en memoria
-// ============================================================
-//  Como no usamos MongoDB ni ninguna base de datos real,
-//  guardamos todo en objetos JavaScript que viven en la RAM
-//  mientras el servidor está corriendo.
-//
-//  ⚠️  IMPORTANTE: Si reinicias el servidor, los datos
-//      vuelven a los valores iniciales del seed.
-// ============================================================
 
 const bcrypt = require('bcryptjs');
-
-// ── El "db" es simplemente un objeto con 3 arreglos ──────────
-// Cada arreglo actúa como una "tabla" o "colección"
 const db = {
   users:    [],   // Usuarios registrados
   projects: [],   // Proyectos creados
   tasks:    [],   // Tareas de todos los proyectos
 };
 
-// ── Función seed: llena la base de datos con datos de prueba ─
-// Se llama una sola vez cuando el servidor arranca.
 function seed() {
-  // Definimos IDs fijos para poder cruzar referencias entre entidades
-  // (ej: una tarea referencia a un usuario por su ID)
   const adminId = 'user-1';
   const devId   = 'user-2';
   const desId   = 'user-3';
@@ -31,11 +14,6 @@ function seed() {
   const proj2Id = 'proj-2';
   const now     = new Date().toISOString(); // Fecha actual en formato ISO
 
-  // ── USUARIOS ─────────────────────────────────────────────────
-  // bcrypt.hashSync(password, saltRounds) convierte "Admin1234!"
-  // en algo como "$2a$10$xyz..." para que nadie pueda leer
-  // la contraseña aunque vea el objeto en memoria.
-  // El "10" indica cuántas rondas de encriptación (más = más seguro y más lento)
   db.users = [
     {
       id: adminId,
@@ -97,14 +75,6 @@ function seed() {
     },
   ];
 
-  // ── TAREAS ────────────────────────────────────────────────────
-  // Cada tarea pertenece a un proyecto (projectId),
-  // puede estar asignada a alguien (assigneeId) y tiene:
-  //   - status:   dónde está en el tablero kanban
-  //   - priority: qué tan urgente es
-  //   - type:     qué clase de trabajo representa
-  //   - comments: array de comentarios anidados
-  //   - history:  registro de todos los cambios que se le han hecho
   db.tasks = [
     {
       id: 'task-1',
@@ -224,20 +194,14 @@ function seed() {
   ];
 }
 
-// Ejecutamos seed() inmediatamente al importar este módulo.
-// Así, cuando el servidor arranca, ya tiene datos de prueba.
 seed();
 
-// ── Helper: buscar un elemento por su ID en cualquier colección ──
-// Uso: findById('users', 'user-1') → retorna el objeto del usuario
 const findById = (col, id) => db[col].find(item => item.id === id) || null;
 
-// ── Helper: quitar la contraseña antes de enviar usuario al frontend ──
-// Nunca debemos mandar passwords, ni encriptados, al cliente.
 const sanitizeUser = (u) => {
   const { password, ...rest } = u; // Desestructuramos quitando "password"
   return rest;                      // Devolvemos todo MENOS la contraseña
 };
 
-// Exportamos el db y los helpers para usarlos en las rutas
+
 module.exports = { db, findById, sanitizeUser };
