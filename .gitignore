@@ -1,0 +1,10 @@
+# Ignorar dependencias
+backend/node_modules/
+frontend/node_modules/
+
+# Ignorar archivos de entorno (seguridad)
+.env
+
+# Ignorar carpetas de producción de React
+frontend/dist/
+frontend/build/
