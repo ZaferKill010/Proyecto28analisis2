@@ -1,11 +1,3 @@
-// ============================================================
-//  routes/auth.js — Autenticación de usuarios
-// ============================================================
-//  Endpoints:
-//    POST /api/auth/register  → Crear cuenta nueva
-//    POST /api/auth/login     → Iniciar sesión
-//    GET  /api/auth/me        → Obtener perfil del usuario logueado
-// ============================================================
 
 const router  = require('express').Router();
 const bcrypt  = require('bcryptjs');
