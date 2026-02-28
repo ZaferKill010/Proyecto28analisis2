@@ -1,27 +1,12 @@
-// ============================================================
-//  routes/projects.js — CRUD de proyectos
-// ============================================================
-//  Endpoints:
-//    GET    /api/projects            → Listar proyectos del usuario
-//    GET    /api/projects/:id        → Detalle de un proyecto
-//    POST   /api/projects            → Crear proyecto
-//    PUT    /api/projects/:id        → Actualizar proyecto
-//    DELETE /api/projects/:id        → Eliminar proyecto (y sus tareas)
-//    POST   /api/projects/:id/members → Agregar miembro al proyecto
-// ============================================================
 
 const router      = require('express').Router();
 const { v4: uuid } = require('uuid');
 const { db, sanitizeUser } = require('../data/store');
 const { protect } = require('../middleware/auth');
 
-// ── Función auxiliar: enriquecer un proyecto con datos extra ──
-// Transforma un proyecto plano en un objeto más completo,
-// reemplazando los IDs por los objetos reales.
 const populate = (project) => ({
   ...project, // Copiamos todas las propiedades originales del proyecto
 
-  // Reemplazamos ownerId (string) por el objeto completo del dueño
   owner: sanitizeUser(db.users.find(u => u.id === project.ownerId) || {}),
 
   // Reemplazamos el array de IDs de miembros por sus objetos completos
@@ -38,13 +23,9 @@ const populate = (project) => ({
   },
 });
 
-// ── Función auxiliar: verificar si un usuario tiene acceso ────
-// Un usuario tiene acceso si es el dueño del proyecto O es miembro
 const hasAccess = (project, userId) =>
   project.ownerId === userId || project.members.includes(userId);
 
-// ── GET /api/projects ─────────────────────────────────────────
-// Devuelve todos los proyectos donde el usuario es dueño o miembro.
 router.get('/', protect, (req, res) => {
   const projects = db.projects
     .filter(p => hasAccess(p, req.user.id)) // Solo sus proyectos
@@ -52,8 +33,6 @@ router.get('/', protect, (req, res) => {
   res.json({ success: true, projects });
 });
 
-// ── GET /api/projects/:id ─────────────────────────────────────
-// Devuelve el detalle de un proyecto específico.
 router.get('/:id', protect, (req, res) => {
   const project = db.projects.find(p => p.id === req.params.id);
 
@@ -67,15 +46,13 @@ router.get('/:id', protect, (req, res) => {
   res.json({ success: true, project: populate(project) });
 });
 
-// ── POST /api/projects ────────────────────────────────────────
-// Crea un nuevo proyecto. El creador automáticamente es el dueño y primer miembro.
 router.post('/', protect, (req, res) => {
   const { name, key, description, icon, color } = req.body;
 
   if (!name || !key)
     return res.status(400).json({ success: false, message: 'Nombre y clave requeridos.' });
 
-  // La clave debe ser única en todo el sistema
+  
   if (db.projects.find(p => p.key === key.toUpperCase()))
     return res.status(400).json({ success: false, message: 'La clave ya existe.' });
 
@@ -97,8 +74,6 @@ router.post('/', protect, (req, res) => {
   res.status(201).json({ success: true, project: populate(project) });
 });
 
-// ── PUT /api/projects/:id ─────────────────────────────────────
-// Actualiza los datos de un proyecto. Solo el dueño puede hacerlo.
 router.put('/:id', protect, (req, res) => {
   const idx = db.projects.findIndex(p => p.id === req.params.id);
 
@@ -119,8 +94,6 @@ router.put('/:id', protect, (req, res) => {
   res.json({ success: true, project: populate(db.projects[idx]) });
 });
 
-// ── DELETE /api/projects/:id ──────────────────────────────────
-// Elimina el proyecto y TODAS sus tareas. Solo el dueño puede hacerlo.
 router.delete('/:id', protect, (req, res) => {
   const idx = db.projects.findIndex(p => p.id === req.params.id);
 
@@ -140,9 +113,6 @@ router.delete('/:id', protect, (req, res) => {
   res.json({ success: true, message: 'Proyecto eliminado.' });
 });
 
-// ── POST /api/projects/:id/members ───────────────────────────
-// Agrega un nuevo miembro al proyecto buscándolo por email.
-// Solo el dueño puede agregar miembros.
 router.post('/:id/members', protect, (req, res) => {
   const project = db.projects.find(p => p.id === req.params.id);
 
